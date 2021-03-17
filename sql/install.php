@@ -26,8 +26,8 @@
 $sql = array();
 
 $sql[] = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'navcategory` (
-    `id_navcategory` int(11) NOT NULL AUTO_INCREMENT,
-    PRIMARY KEY  (`id_navcategory`)
+    `id_navcategory` varchar(25) NOT NULL,
+    `configuration` varchar(25) DEFAULT NULL
 ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8;';
 
 foreach ($sql as $query) {

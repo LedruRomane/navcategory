@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<module>
+    <name>navcategory</name>
+    <displayName><![CDATA[Navigation Category]]></displayName>
+    <version><![CDATA[1.0.0]]></version>
+    <description><![CDATA[Module prestashop pour naviguer dans les pages cat&eacute;gories avec un menu dynamique de l&#039;arborescence. ]]></description>
+    <author><![CDATA[RLedru]]></author>
+    <tab><![CDATA[administration]]></tab>
+	<confirmUninstall><![CDATA[Etes-vous sûr de vouloir désinstaller ce module? ]]></confirmUninstall>
+    <is_configurable>1</is_configurable>
+    <need_instance>1</need_instance>
+	<limited_countries></limited_countries>
+</module>

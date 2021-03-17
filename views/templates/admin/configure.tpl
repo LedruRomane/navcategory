@@ -26,23 +26,23 @@
 <div class="panel">
 	<h3><i class="icon icon-credit-card"></i> {l s='Navigation Category' mod='navcategory'}</h3>
 	<p>
-		<strong>{l s='Here is my new generic module!' mod='navcategory'}</strong><br />
-		{l s='Thanks to PrestaShop, now I have a great module.' mod='navcategory'}<br />
-		{l s='I can configure it using the following configuration form.' mod='navcategory'}
+		<strong>{l s='Bienvenu sur ce module pour un accordéon customisable en page catégories.' mod='navcategory'}</strong><br/><br/>
+		{l s='Vous pourrez ici configurer ce qui figurera en haut de vos page catégories ou product-list:' mod='navcategory'}<br />
+			<ul>
+				<li><p>{l s='Configurer les titres et le contenu d\'un accordéon de 4 cartes' mod='navcategory'}</p></li>
+				<li><p>{l s='Configurer via l\'arborescence de vos catégories' mod='navcategory'}</p></li>
+			</ul>
+
 	</p>
 	<br />
 	<p>
-		{l s='This module will boost your sales!' mod='navcategory'}
+		{l s='Ce module vous aidera à personnaliser votre navigation entre vos catégories de produit!' mod='navcategory'}
 	</p>
 </div>
 
 <div class="panel">
 	<h3><i class="icon icon-tags"></i> {l s='Documentation' mod='navcategory'}</h3>
 	<p>
-		&raquo; {l s='You can get a PDF documentation to configure this module' mod='navcategory'} :
-		<ul>
-			<li><a href="#" target="_blank">{l s='English' mod='navcategory'}</a></li>
-			<li><a href="#" target="_blank">{l s='French' mod='navcategory'}</a></li>
-		</ul>
+		&raquo; {l s='N\'oubliez pas d\'accrocher votre module au hook custom en haut à droite de cette page de configuration.' mod='navcategory'}
 	</p>
 </div>

@@ -27,6 +27,8 @@
 if (!defined('_PS_VERSION_')) {
     exit;
 }
+require_once _PS_MODULE_DIR_.'navcategory/classes/Config.php';
+require_once _PS_MODULE_DIR_.'navcategory/services/CdcTools.php';
 
 class Navcategory extends Module
 {
@@ -35,14 +37,12 @@ class Navcategory extends Module
     public function __construct()
     {
         $this->name = 'navcategory';
-        $this->tab = 'content_management';
+        $this->tab = 'administration';
         $this->version = '1.0.0';
         $this->author = 'RLedru';
         $this->need_instance = 1;
 
-        /**
-         * Set $this->bootstrap to true if your module is compliant with bootstrap (PrestaShop 1.6)
-         */
+
         $this->bootstrap = true;
 
         parent::__construct();
@@ -55,10 +55,7 @@ class Navcategory extends Module
         $this->ps_versions_compliancy = array('min' => '1.6', 'max' => _PS_VERSION_);
     }
 
-    /**
-     * Don't forget to create update methods if needed:
-     * http://doc.prestashop.com/display/PS16/Enabling+the+Auto-Update
-     */
+
     public function install()
     {
         Configuration::updateValue('NAVCATEGORY_LIVE_MODE', false);
@@ -66,8 +63,7 @@ class Navcategory extends Module
         include(dirname(__FILE__).'/sql/install.php');
 
         return parent::install() &&
-            $this->registerHook('header') &&
-            $this->registerHook('backOfficeHeader');
+            $this->registerHook('DisplayHeaderCategory');
     }
 
     public function uninstall()
@@ -91,11 +87,31 @@ class Navcategory extends Module
             $this->postProcess();
         }
 
-        $this->context->smarty->assign('module_dir', $this->_path);
+        $output = null;
 
-        $output = $this->context->smarty->fetch($this->local_path.'views/templates/admin/configure.tpl');
+        if(Config::get('HOOK') == null) {
+            $hook = $this->installCustomHooks();
+            if ($hook) {
+                $output .= $this->displayConfirmation($this->l('Hooks are correctly installed!'));
+                $hookDb = Config::updateHook('displayHeaderCategory', 'Top of page category', 'This hook is placed at the top of product list on page category');
+                $hookCat = Config::updateValue('HOOK', 'hookInstalled');
+                if (!$hookDb || !$hookCat) {
+                    $output .= $this->displayError($this->l('Hooks are not correctly installed :-('));
+                }
+            } else {
+                $output .= $this->displayError($this->l('Hooks are not correctly installed :-('));
+                $this->smarty->assign(array(
+                    'troubleshooting' => true
+                ));
+            }
+        }
 
-        return $output.$this->renderForm();
+            $this->context->smarty->assign('module_dir', $this->_path);
+
+            $output = $this->context->smarty->fetch($this->local_path . 'views/templates/admin/configure.tpl');
+
+            return $output . $this->renderForm();
+
     }
 
     /**
@@ -205,20 +221,44 @@ class Navcategory extends Module
     /**
     * Add the CSS & JavaScript files you want to be loaded in the BO.
     */
-    public function hookBackOfficeHeader()
+    public function hookDisplayHeaderCategory()
     {
-        if (Tools::getValue('module_name') == $this->name) {
-            $this->context->controller->addJS($this->_path.'views/js/back.js');
-            $this->context->controller->addCSS($this->_path.'views/css/back.css');
-        }
+        $data=null;
+
+        $this->context->smarty->assign([
+            'data' => $data
+        ]);
+        return $this->display(__FILE__, 'navcategory.tpl');
     }
 
-    /**
-     * Add the CSS & JavaScript files you want to be added on the FO.
+    /***
+     * Install into tpl template of prestashop the custom hook
+     * @return bool
      */
-    public function hookHeader()
+    public function installCustomHooks()
     {
-        $this->context->controller->addJS($this->_path.'/views/js/front.js');
-        $this->context->controller->addCSS($this->_path.'/views/css/front.css');
+        $success = true;
+        if (version_compare(_PS_VERSION_, '1.7', '>=')) {
+            $filename = _PS_THEME_DIR_ . 'templates/catalog/listing/product-list.tpl';
+            if (!CdcTools::stringInFile('{hook h="displayHeaderCategory"}', $filename)) {
+                $file_content = Tools::file_get_contents($filename);
+                $strg = "(<section id=\"main\">)";
+                if (!empty($file_content)) {
+                    $matches = preg_split($strg, $file_content, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
+                    if (count($matches) == 2) {
+                        $new_content = $matches[0] . "<section id=\"main\"> \n {hook h=\"displayHeaderCategory\"}" . $matches[1];
+                        if (!file_put_contents($filename, $new_content)) {
+                            $success = false;
+                        }
+                    } else {
+                        $success = false;
+                    }
+                } else {
+                    $success = false;
+                }
+            }
+        }
+        return $success;
     }
+
 }
