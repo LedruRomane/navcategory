@@ -158,7 +158,7 @@ class Navcategory extends Module
                     'type'      => 'radio',
                     'label'     => $this->l('Quelle méthode d\'affichage voulez-vous utiliser? '),
                     'desc'      => $this->l('Choisissez l\'un ou l\'autre.'),
-                    'name'      => 'active',
+                    'name'      => 'TYPE_CONFIG',
                     'required'  => true,
                     'class'     => 't',
                     'is_bool'   => true,
@@ -183,37 +183,12 @@ class Navcategory extends Module
                 ),
                 'input' => array(
                     array(
-                        'type' => 'switch',
-                        'label' => $this->l('Live mode'),
-                        'name' => 'NAVCATEGORY_LIVE_MODE',
-                        'is_bool' => true,
-                        'desc' => $this->l('Use this module in live mode'),
-                        'values' => array(
-                            array(
-                                'id' => 'active_on',
-                                'value' => true,
-                                'label' => $this->l('Enabled')
-                            ),
-                            array(
-                                'id' => 'active_off',
-                                'value' => false,
-                                'label' => $this->l('Disabled')
-                            )
-                        ),
-                    ),
-                    array(
                         'col' => 3,
                         'type' => 'text',
-                        'prefix' => '<i class="icon icon-envelope"></i>',
-                        'desc' => $this->l('Enter a valid email address'),
-                        'name' => 'NAVCATEGORY_ACCOUNT_EMAIL',
-                        'label' => $this->l('Email'),
-                    ),
-                    array(
-                        'type' => 'password',
-                        'name' => 'NAVCATEGORY_ACCOUNT_PASSWORD',
-                        'label' => $this->l('Password'),
-                        'id' => 'toto'
+                        'label' => $this->l('Titre 1 : '),
+                        'name' => 'PERSO_TITRE_1',
+                        'required' => true,
+                        'desc'     => $this->l('Donner un titre pour le premier bloc.')
                     ),
                 ),
                 'submit' => array(
@@ -227,12 +202,12 @@ class Navcategory extends Module
             ),
             'input' => array(
                 array(
-                    'type'     => 'text',                             // This is a regular <input> tag.
-                    'label'    => $this->l('Name'),                   // The <label> for this <input> tag.
-                    'name'     => 'name',                             // The content of the 'id' attribute of the <input> tag.
-                    'class'    => 'lg',                                // The content of the 'class' attribute of the <input> tag. To set the size of the element, use these: sm, md, lg, xl, or xxl.
-                    'required' => true,                               // If set to true, this option must be set.
-                    'desc'     => $this->l('Please enter your name.') // A help text, displayed right next to the <input> tag.
+                    'type'     => 'text',
+                    'label'    => $this->l('Titre niveau 2 : '),
+                    'name'     => 'AUTO_TITRE_NIVEAU_2',
+                    'class'    => 'lg',
+                    'required' => true,
+                    'desc'     => $this->l('Donner un titre pour les catégories supérieures.')
                 ),
                 ),
                 'submit' => array(
@@ -251,11 +226,10 @@ class Navcategory extends Module
     protected function getConfigFormValues()
     {
         return array(
-            'name' => Config::get('name'),
-            'active' => Config::get('active'),
-            'NAVCATEGORY_LIVE_MODE' => Configuration::get('NAVCATEGORY_LIVE_MODE', true),
-            'NAVCATEGORY_ACCOUNT_EMAIL' => Configuration::get('NAVCATEGORY_ACCOUNT_EMAIL', 'contact@prestashop.com'),
-            'NAVCATEGORY_ACCOUNT_PASSWORD' => Configuration::get('NAVCATEGORY_ACCOUNT_PASSWORD', null),
+            'TYPE_CONFIG' => Config::get('TYPE_CONFIG'),
+            'PERSO_TITRE_1' => Config::get('PERSO_TITRE_1'),
+            'AUTO_TITRE_NIVEAU_2' => Config::get('AUTO_TITRE_NIVEAU_2'),
+
         );
     }
 
@@ -318,5 +292,4 @@ class Navcategory extends Module
         }
         return $success;
     }
-
 }
