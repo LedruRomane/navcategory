@@ -25,3 +25,8 @@
 * Don't forget to prefix your containers with your own identifier
 * to avoid any conflicts with others containers.
 */
+$(document).ready(function() {
+    $(jQuery( "#perso:radio" )).click(function() {
+        document.getElementById('#fieldset_1_1').style.display = 'block';
+    });
+});

@@ -63,7 +63,8 @@ class Navcategory extends Module
         include(dirname(__FILE__).'/sql/install.php');
 
         return parent::install() &&
-            $this->registerHook('DisplayHeaderCategory');
+            $this->registerHook('DisplayHeaderCategory') &&
+            $this->registerHook('backOfficeFooter');
     }
 
     public function uninstall()
@@ -86,7 +87,6 @@ class Navcategory extends Module
         if (((bool)Tools::isSubmit('submitNavcategoryModule')) == true) {
             $this->postProcess();
         }
-
         $output = null;
 
         if(Config::get('HOOK') == null) {
@@ -106,11 +106,11 @@ class Navcategory extends Module
             }
         }
 
-            $this->context->smarty->assign('module_dir', $this->_path);
+        $this->context->smarty->assign('module_dir', $this->_path);
 
-            $output = $this->context->smarty->fetch($this->local_path . 'views/templates/admin/configure.tpl');
+        $output = $this->context->smarty->fetch($this->local_path . 'views/templates/admin/configure.tpl');
 
-            return $output . $this->renderForm();
+        return $output . $this->renderForm();
 
     }
 
@@ -139,7 +139,7 @@ class Navcategory extends Module
             'id_language' => $this->context->language->id,
         );
 
-        return $helper->generateForm(array($this->getConfigForm()));
+        return $helper->generateForm($this->getConfigForm());
     }
 
     /**
@@ -147,8 +147,36 @@ class Navcategory extends Module
      */
     protected function getConfigForm()
     {
-        return array(
-            'form' => array(
+        $default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
+        $fields_form[0]['form'] = array(
+            'legend' => array(
+            'title' => $this->l('Settings'),
+            'icon' => 'icon-cogs'
+            ),
+            'input' => array(
+                array(
+                    'type'      => 'radio',
+                    'label'     => $this->l('Quelle méthode d\'affichage voulez-vous utiliser? '),
+                    'desc'      => $this->l('Choisissez l\'un ou l\'autre.'),
+                    'name'      => 'active',
+                    'required'  => true,
+                    'class'     => 't',
+                    'is_bool'   => true,
+                    'values'    => array(
+                        array(
+                            'id'    => 'perso',
+                            'value' => 1,
+                            'label' => $this->l('Maillage personnalisé en fonction de la catégorie courante.')
+                        ),
+                        array(
+                            'id'    => 'auto',
+                            'value' => 0,
+                            'label' => $this->l('Maillage automatique par niveau en fonction de la catégorie courante.')
+                        )
+                    ),
+                ),
+            ));
+        $fields_form[1]['form'] = array(
                 'legend' => array(
                 'title' => $this->l('Settings'),
                 'icon' => 'icon-cogs',
@@ -185,13 +213,36 @@ class Navcategory extends Module
                         'type' => 'password',
                         'name' => 'NAVCATEGORY_ACCOUNT_PASSWORD',
                         'label' => $this->l('Password'),
+                        'id' => 'toto'
                     ),
                 ),
                 'submit' => array(
                     'title' => $this->l('Save'),
                 ),
-            ),
         );
+        $fields_form[2]['form'] = array(
+            'legend' => array(
+                'title' => $this->l('Settings'),
+                'icon' => 'icon-cogs',
+            ),
+            'input' => array(
+                array(
+                    'type'     => 'text',                             // This is a regular <input> tag.
+                    'label'    => $this->l('Name'),                   // The <label> for this <input> tag.
+                    'name'     => 'name',                             // The content of the 'id' attribute of the <input> tag.
+                    'class'    => 'lg',                                // The content of the 'class' attribute of the <input> tag. To set the size of the element, use these: sm, md, lg, xl, or xxl.
+                    'required' => true,                               // If set to true, this option must be set.
+                    'desc'     => $this->l('Please enter your name.') // A help text, displayed right next to the <input> tag.
+                ),
+                ),
+                'submit' => array(
+                    'title' => $this->l('Save'),
+                ),
+
+            );
+
+        return $fields_form;
+
     }
 
     /**
@@ -200,6 +251,8 @@ class Navcategory extends Module
     protected function getConfigFormValues()
     {
         return array(
+            'name' => Config::get('name'),
+            'active' => Config::get('active'),
             'NAVCATEGORY_LIVE_MODE' => Configuration::get('NAVCATEGORY_LIVE_MODE', true),
             'NAVCATEGORY_ACCOUNT_EMAIL' => Configuration::get('NAVCATEGORY_ACCOUNT_EMAIL', 'contact@prestashop.com'),
             'NAVCATEGORY_ACCOUNT_PASSWORD' => Configuration::get('NAVCATEGORY_ACCOUNT_PASSWORD', null),
@@ -214,13 +267,18 @@ class Navcategory extends Module
         $form_values = $this->getConfigFormValues();
 
         foreach (array_keys($form_values) as $key) {
-            Configuration::updateValue($key, Tools::getValue($key));
+            Config::updateValue($key, Tools::getValue($key));
         }
     }
 
     /**
-    * Add the CSS & JavaScript files you want to be loaded in the BO.
-    */
+     * Add the CSS & JavaScript files you want to be loaded in the BO.
+     */
+    public function hookDisplayBackOfficeFooter()
+    {
+        return $this->display(__FILE__, 'back.tpl');
+    }
+
     public function hookDisplayHeaderCategory()
     {
         $data=null;

@@ -46,3 +46,4 @@
 		&raquo; {l s='N\'oubliez pas d\'accrocher votre module au hook custom en haut à droite de cette page de configuration.' mod='navcategory'}
 	</p>
 </div>
+
