@@ -145,7 +145,7 @@ class Navcategory extends Module
             .'&configure='.$this->name.'&tab_module='.$this->tab.'&module_name='.$this->name;
         $helper->token = Tools::getAdminTokenLite('AdminModules');
         $inputData = $this->getConfigFormValues();
-        $checkboxData = $this->getConfigCheckboxValues();
+        $checkboxData = array_merge($this->getConfigCheckboxValuesPerso(),$this->getConfigCheckboxValuesAuto());
         $datas = array_merge($inputData,$checkboxData);
         $helper->tpl_vars = array(
             'fields_value' => $datas,/* Add values for your inputs */
@@ -359,13 +359,10 @@ class Navcategory extends Module
         return $return;
     }
 
-    protected function getConfigCheckboxValues(){
+    protected function getConfigCheckboxValuesAuto(){
 
         $configAutoField = array (
             'Auto_options' => Config::get('Auto_options')
-        );
-        $configPersoField = array (
-            'Perso_options' => Config::get('Perso_options')
         );
 
         $opts = $this->getOptions();
@@ -401,7 +398,49 @@ class Navcategory extends Module
         return $configAutoField;
     }
 
+    protected function getConfigCheckboxValuesPerso(){
 
+        $configPersoField = array (
+            'Auto_options_2' => Config::get('Auto_options_2'),
+            'Auto_options_3' => Config::get('Auto_options_3'),
+            'Auto_options_4' => Config::get('Auto_options_4'),
+            'Auto_options_5' => Config::get('Auto_options_5'),
+        );
+
+        for($i=2; $i<6; $i++){
+            $opts = $this->getOptions();
+            $id_checkbox_options = array();
+            foreach($opts as $options){
+                $id_checkbox_options[] = $options['id_checkbox_options'];
+            }
+            $id_checkbox_options_post = array();
+            foreach ($id_checkbox_options as $opt_id)
+            {
+                if (Tools::getValue('Auto_options_'.$i.'_'.(int)$opt_id))
+                {
+                    $id_checkbox_options_post['Perso_options_'.$i.'_'.(int)$opt_id] = true;
+                }
+            }
+            $id_checkbox_options_config = array();
+            if ($confs = Config::get('Perso_options_'.$i)){
+                $confs = explode(',', Config::get('Perso_options_'.$i));
+            }
+            else{
+                $confs = array();
+            }
+            foreach ($confs as $conf){
+                $id_checkbox_options_config['Perso_options_'.$i.'_'.(int)$conf] = true;
+            }
+            if (Tools::isSubmit('saveAuto')){
+                $configAutoField = array_merge($configPersoField, array_intersect($id_checkbox_options_post, $id_checkbox_options_config));
+            }
+            else{
+                $configAutoField = array_merge($configPersoField, $id_checkbox_options_config);
+            }
+        }
+
+        return $configPersoField;
+    }
     /**
      * Save form data.
      */
@@ -413,16 +452,20 @@ class Navcategory extends Module
             Config::updateValue($key, Tools::getValue($key));
         }
 
-        $all_opts = $this->getOptions();
-        $checkbox_options = array();
-        foreach ($all_opts as $chbx_options)
-        {
-            if (Tools::getValue('options_'.(int)$chbx_options['id_checkbox_options']))
+        for ($i=2; $i<6; $i++){
+            $all_opts = $this->getOptions();
+            $checkbox_options = array();
+            $num = $i-1;
+            foreach ($all_opts as $chbx_options)
             {
-                $checkbox_options[] = $chbx_options['id_checkbox_options'];
+                if (Tools::getValue('Perso_options_'.$num.'_'.(int)$chbx_options['id_checkbox_options']))
+                {
+                    $checkbox_options[] = $chbx_options['id_checkbox_options'];
+                }
             }
+            $id = 'Perso_options_'.$i;
+            Config::updateValue($id, implode(',', $checkbox_options));
         }
-        Config::updateValue('Perso_options', implode(',', $checkbox_options));
     }
 
     /**
