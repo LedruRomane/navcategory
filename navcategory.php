@@ -401,13 +401,14 @@ class Navcategory extends Module
     protected function getConfigCheckboxValuesPerso(){
 
         $configPersoField = array (
-            'Auto_options_2' => Config::get('Auto_options_2'),
-            'Auto_options_3' => Config::get('Auto_options_3'),
-            'Auto_options_4' => Config::get('Auto_options_4'),
-            'Auto_options_5' => Config::get('Auto_options_5'),
+            'Perso_options_2' => Config::get('Perso_options_2'),
+            'Perso_options_3' => Config::get('Perso_options_3'),
+            'Perso_options_4' => Config::get('Perso_options_4'),
+            'Perso_options_5' => Config::get('Perso_options_5'),
         );
 
         for($i=2; $i<6; $i++){
+            $num=$i-1;
             $opts = $this->getOptions();
             $id_checkbox_options = array();
             foreach($opts as $options){
@@ -416,9 +417,9 @@ class Navcategory extends Module
             $id_checkbox_options_post = array();
             foreach ($id_checkbox_options as $opt_id)
             {
-                if (Tools::getValue('Auto_options_'.$i.'_'.(int)$opt_id))
+                if (Tools::getValue('Perso_options_'.$num.'_'.(int)$opt_id))
                 {
-                    $id_checkbox_options_post['Perso_options_'.$i.'_'.(int)$opt_id] = true;
+                    $id_checkbox_options_post['Perso_options_'.$num.'_'.(int)$opt_id] = true;
                 }
             }
             $id_checkbox_options_config = array();
@@ -429,13 +430,13 @@ class Navcategory extends Module
                 $confs = array();
             }
             foreach ($confs as $conf){
-                $id_checkbox_options_config['Perso_options_'.$i.'_'.(int)$conf] = true;
+                $id_checkbox_options_config['Perso_options_'.$num.'_'.(int)$conf] = true;
             }
             if (Tools::isSubmit('saveAuto')){
-                $configAutoField = array_merge($configPersoField, array_intersect($id_checkbox_options_post, $id_checkbox_options_config));
+                $configPersoField = array_merge($configPersoField, array_intersect($id_checkbox_options_post, $id_checkbox_options_config));
             }
             else{
-                $configAutoField = array_merge($configPersoField, $id_checkbox_options_config);
+                $configPersoField = array_merge($configPersoField, $id_checkbox_options_config);
             }
         }
 
