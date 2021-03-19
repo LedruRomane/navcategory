@@ -63,7 +63,8 @@ class Navcategory extends Module
         include(dirname(__FILE__).'/sql/install.php');
 
         return parent::install() &&
-            $this->registerHook('DisplayHeaderCategory');
+            $this->registerHook('DisplayHeaderCategory') &&
+            $this->registerHook('backOfficeFooter');
     }
 
     public function uninstall()
@@ -83,11 +84,22 @@ class Navcategory extends Module
         /**
          * If values have been submitted in the form, process.
          */
-        if (((bool)Tools::isSubmit('submitNavcategoryModule')) == true) {
-            $this->postProcess();
-        }
 
         $output = null;
+        if (Tools::isSubmit('savePerso')) {
+            $this->postProcessPerso();
+            if($output == null)
+            {
+                $output .= $this->displayConfirmation($this->l('Configurations mises à jour.'));
+            }
+        }
+        if (Tools::isSubmit('saveAuto')) {
+            $this->postProcessAuto();
+            if($output == null)
+            {
+                $output .= $this->displayConfirmation($this->l('Configurations mises à jour.'));
+            }
+        }
 
         if(Config::get('HOOK') == null) {
             $hook = $this->installCustomHooks();
@@ -106,11 +118,11 @@ class Navcategory extends Module
             }
         }
 
-            $this->context->smarty->assign('module_dir', $this->_path);
+        $this->context->smarty->assign('module_dir', $this->_path);
 
-            $output = $this->context->smarty->fetch($this->local_path . 'views/templates/admin/configure.tpl');
+        $output = $this->context->smarty->fetch($this->local_path . 'views/templates/admin/configure.tpl');
 
-            return $output . $this->renderForm();
+        return $output.$this->renderForm();
 
     }
 
@@ -132,14 +144,16 @@ class Navcategory extends Module
         $helper->currentIndex = $this->context->link->getAdminLink('AdminModules', false)
             .'&configure='.$this->name.'&tab_module='.$this->tab.'&module_name='.$this->name;
         $helper->token = Tools::getAdminTokenLite('AdminModules');
-
+        $inputData = $this->getConfigFormValues();
+        $checkboxData = array_merge($this->getConfigCheckboxValuesPerso(),$this->getConfigCheckboxValuesAuto());
+        $datas = array_merge($inputData,$checkboxData);
         $helper->tpl_vars = array(
-            'fields_value' => $this->getConfigFormValues(), /* Add values for your inputs */
+            'fields_value' => $datas,/* Add values for your inputs */
             'languages' => $this->context->controller->getLanguages(),
             'id_language' => $this->context->language->id,
         );
 
-        return $helper->generateForm(array($this->getConfigForm()));
+        return $helper->generateForm($this->getConfigForm());
     }
 
     /**
@@ -147,51 +161,180 @@ class Navcategory extends Module
      */
     protected function getConfigForm()
     {
-        return array(
-            'form' => array(
+        $default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
+        $fields_form[0]['form'] = array(
+            'legend' => array(
+            'title' => $this->l('Pré-selection'),
+            'icon' => 'icon-cogs'
+            ),
+            'input' => array(
+                array(
+                    'type'      => 'radio',
+                    'label'     => $this->l('Quelle méthode d\'affichage voulez-vous utiliser? '),
+                    'desc'      => $this->l('Choisissez l\'un ou l\'autre.'),
+                    'name'      => 'TYPE_CONFIG',
+                    'required'  => true,
+                    'class'     => 'radiobutton',
+                    'is_bool'   => true,
+                    'values'    => array(
+                        array(
+                            'id'    => 'perso',
+                            'value' => 1,
+                            'label' => $this->l('Maillage personnalisé en fonction de la catégorie courante.')
+                        ),
+                        array(
+                            'id'    => 'auto',
+                            'value' => 0,
+                            'label' => $this->l('Maillage automatique par niveau en fonction de la catégorie courante.')
+                        )
+                    ),
+                ),
+            ));
+        $fields_form[1]['form'] = array(
                 'legend' => array(
                 'title' => $this->l('Settings'),
                 'icon' => 'icon-cogs',
                 ),
                 'input' => array(
-                    array(
-                        'type' => 'switch',
-                        'label' => $this->l('Live mode'),
-                        'name' => 'NAVCATEGORY_LIVE_MODE',
-                        'is_bool' => true,
-                        'desc' => $this->l('Use this module in live mode'),
-                        'values' => array(
-                            array(
-                                'id' => 'active_on',
-                                'value' => true,
-                                'label' => $this->l('Enabled')
-                            ),
-                            array(
-                                'id' => 'active_off',
-                                'value' => false,
-                                'label' => $this->l('Disabled')
-                            )
-                        ),
-                    ),
-                    array(
-                        'col' => 3,
-                        'type' => 'text',
-                        'prefix' => '<i class="icon icon-envelope"></i>',
-                        'desc' => $this->l('Enter a valid email address'),
-                        'name' => 'NAVCATEGORY_ACCOUNT_EMAIL',
-                        'label' => $this->l('Email'),
-                    ),
-                    array(
-                        'type' => 'password',
-                        'name' => 'NAVCATEGORY_ACCOUNT_PASSWORD',
-                        'label' => $this->l('Password'),
-                    ),
+                    $this->getTextBoxPerso(1),
+                    $this->getCheckboxPerso(1),
+                    $this->getTextBoxPerso(2),
+                    $this->getCheckboxPerso(2),
+                    $this->getTextBoxPerso(3),
+                    $this->getCheckboxPerso(3),
+                    $this->getTextBoxPerso(4),
+                    $this->getCheckboxPerso(4),
+
                 ),
                 'submit' => array(
-                    'title' => $this->l('Save'),
+                    'title' => $this->l('Enregistrer'),
+                    'name'  => 'savePerso'
+                ),
+        );
+        $fields_form[2]['form'] = array(
+            'legend' => array(
+                'title' => $this->l('Settings'),
+                'icon' => 'icon-cogs',
+            ),
+            'input' => array(
+                $this->getTextBoxAuto(2),
+                $this->getTextBoxAuto(3),
+                $this->getTextBoxAuto(4),
+                $this->getTextBoxAuto(5),
+                array(
+                    'type' => 'checkbox',
+                    'label' => $this->l('Selectionnez l\'arborescence de la catégorie courante voulue pour le bloc : '),
+                    'desc' => $this->l('Faites vos choix.'),
+                    'name' => 'Auto_options',
+                    'values' => array(
+                        'query' => $this->getOptions(),
+                        'id' => 'id_checkbox_options',
+                        'name' => 'checkbox_options_name',
+                    ),
                 ),
             ),
+
+            'submit' => array(
+                'title' => $this->l('Enregistrer'),
+                'name'  => 'saveAuto'
+            ),
+
         );
+        return $fields_form;
+
+    }
+
+    /***
+     * Option bloc for the displayForm checkbox Perso in the Admin Config page (title + checkboxes)
+     *
+     */
+    public function getCheckboxPerso($num){
+        $checkbox = array(
+                'type' => 'checkbox',
+                'label' => $this->l('Selectionnez l\'arborescence de la catégorie courante voulue pour le bloc '.$num.' : '),
+                'desc' => $this->l('Faites vos choix.'),
+                'name' => 'Perso_options_'.$num,
+                'values' => array(
+                    'query' => $this->getOptions(),
+                    'id' => 'id_checkbox_options',
+                    'name' => 'checkbox_options_name',
+                ),
+            );
+        return $checkbox;
+    }
+
+    /***
+     * Option bloc for the displayForm textbox Perso in the Admin Config page (title + checkboxes)
+     *
+     */
+    public function getTextBoxPerso($num){
+        $textBox = array(
+            'col' => 3,
+            'type' => 'text',
+            'label' => $this->l('Titre '.$num.' : '),
+            'name' => 'PERSO_TITRE_'.$num,
+            'required' => true,
+            'desc'     => $this->l('Donner un titre pour le bloc numéro '.$num.'. ')
+        );
+        return $textBox;
+    }
+
+    /***
+     * Option bloc for the displayForm textbox Auto in the Admin Config page (title + checkboxes)
+     *
+     */
+    public function getTextBoxAuto($num){
+        $textBox = array(
+            'col' => 3,
+            'type' => 'text',
+            'label' => $this->l('Titre au niveau '.$num.' : '),
+            'name' => 'AUTO_TITRE_'.$num,
+            'required' => true,
+            'desc'     => $this->l('Titre obligatoire.')
+        );
+        return $textBox;
+    }
+
+    /***
+     * Options for the displayForm in the Admin Config page (checkboxes)
+     * @return string[][]
+     */
+    public function  getOptions(){
+        $options =array(
+            array(
+                'id_checkbox_options' => '1',
+                'checkbox_options_name' => 'Grand-parents',
+            ),
+            array(
+                'id_checkbox_options' => '2',
+                'checkbox_options_name' => 'Parents',
+            ),
+            array(
+                'id_checkbox_options' => '3',
+                'checkbox_options_name' => 'Oncles',
+            ),
+            array(
+                'id_checkbox_options' => '4',
+                'checkbox_options_name' => 'Frères',
+            ),
+            array(
+                'id_checkbox_options' => '5',
+                'checkbox_options_name' => 'Cousins',
+            ),
+            array(
+                'id_checkbox_options' => '6',
+                'checkbox_options_name' => 'Enfants',
+            ),
+            array(
+                'id_checkbox_options' => '7',
+                'checkbox_options_name' => 'Neveux',
+            ),
+            array(
+                'id_checkbox_options' => '8',
+                'checkbox_options_name' => 'Petits-enfants',
+            )
+        );
+        return $options;
     }
 
     /**
@@ -199,28 +342,164 @@ class Navcategory extends Module
      */
     protected function getConfigFormValues()
     {
-        return array(
-            'NAVCATEGORY_LIVE_MODE' => Configuration::get('NAVCATEGORY_LIVE_MODE', true),
-            'NAVCATEGORY_ACCOUNT_EMAIL' => Configuration::get('NAVCATEGORY_ACCOUNT_EMAIL', 'contact@prestashop.com'),
-            'NAVCATEGORY_ACCOUNT_PASSWORD' => Configuration::get('NAVCATEGORY_ACCOUNT_PASSWORD', null),
+
+        $return = array(
+            'TYPE_CONFIG' => Config::get('TYPE_CONFIG'),
+            'AUTO_TITRE_2' => Config::get('AUTO_TITRE_2'),
+            'AUTO_TITRE_3' => Config::get('AUTO_TITRE_3'),
+            'AUTO_TITRE_4' => Config::get('AUTO_TITRE_4'),
+            'AUTO_TITRE_5' => Config::get('AUTO_TITRE_5'),
+            'PERSO_TITRE_1' => Config::get('PERSO_TITRE_1'),
+            'PERSO_TITRE_2' => Config::get('PERSO_TITRE_2'),
+            'PERSO_TITRE_3' => Config::get('PERSO_TITRE_3'),
+            'PERSO_TITRE_4' => Config::get('PERSO_TITRE_4')
+
         );
+
+        return $return;
+    }
+
+    protected function getConfigCheckboxValuesAuto(){
+
+        $configAutoField = array (
+            'Auto_options' => Config::get('Auto_options')
+        );
+
+        $opts = $this->getOptions();
+        $id_checkbox_options = array();
+        foreach($opts as $options){
+            $id_checkbox_options[] = $options['id_checkbox_options'];
+            }
+        $id_checkbox_options_post = array();
+        foreach ($id_checkbox_options as $opt_id)
+        {
+            if (Tools::getValue('Auto_options_'.(int)$opt_id))
+            {
+                $id_checkbox_options_post['Auto_options_'.(int)$opt_id] = true;
+            }
+        }
+        $id_checkbox_options_config = array();
+        if ($confs = Config::get('Auto_options')){
+            $confs = explode(',', Config::get('Auto_options'));
+        }
+        else{
+            $confs = array();
+        }
+        foreach ($confs as $conf){
+            $id_checkbox_options_config['Auto_options_'.(int)$conf] = true;
+        }
+
+        if (Tools::isSubmit('saveAuto')){
+            $configAutoField = array_merge($configAutoField, array_intersect($id_checkbox_options_post, $id_checkbox_options_config));
+        }
+        else{
+            $configAutoField = array_merge($configAutoField, $id_checkbox_options_config);
+        }
+        return $configAutoField;
+    }
+
+    protected function getConfigCheckboxValuesPerso(){
+
+        $configPersoField = array (
+            'Perso_options_2' => Config::get('Perso_options_2'),
+            'Perso_options_3' => Config::get('Perso_options_3'),
+            'Perso_options_4' => Config::get('Perso_options_4'),
+            'Perso_options_5' => Config::get('Perso_options_5'),
+        );
+
+        for($i=2; $i<6; $i++){
+            $num=$i-1;
+            $opts = $this->getOptions();
+            $id_checkbox_options = array();
+            foreach($opts as $options){
+                $id_checkbox_options[] = $options['id_checkbox_options'];
+            }
+            $id_checkbox_options_post = array();
+            foreach ($id_checkbox_options as $opt_id)
+            {
+                if (Tools::getValue('Perso_options_'.$num.'_'.(int)$opt_id))
+                {
+                    $id_checkbox_options_post['Perso_options_'.$num.'_'.(int)$opt_id] = true;
+                }
+            }
+            $id_checkbox_options_config = array();
+            if ($confs = Config::get('Perso_options_'.$i)){
+                $confs = explode(',', Config::get('Perso_options_'.$i));
+            }
+            else{
+                $confs = array();
+            }
+            foreach ($confs as $conf){
+                $id_checkbox_options_config['Perso_options_'.$num.'_'.(int)$conf] = true;
+            }
+            if (Tools::isSubmit('saveAuto')){
+                $configPersoField = array_merge($configPersoField, array_intersect($id_checkbox_options_post, $id_checkbox_options_config));
+            }
+            else{
+                $configPersoField = array_merge($configPersoField, $id_checkbox_options_config);
+            }
+        }
+
+        return $configPersoField;
+    }
+    /**
+     * Save form data.
+     */
+    protected function postProcessPerso()
+    {
+        $form_values = $this->getConfigFormValues();
+
+        foreach (array_keys($form_values) as $key) {
+            Config::updateValue($key, Tools::getValue($key));
+        }
+
+        for ($i=2; $i<6; $i++){
+            $all_opts = $this->getOptions();
+            $checkbox_options = array();
+            $num = $i-1;
+            foreach ($all_opts as $chbx_options)
+            {
+                if (Tools::getValue('Perso_options_'.$num.'_'.(int)$chbx_options['id_checkbox_options']))
+                {
+                    $checkbox_options[] = $chbx_options['id_checkbox_options'];
+                }
+            }
+            $id = 'Perso_options_'.$i;
+            Config::updateValue($id, implode(',', $checkbox_options));
+        }
     }
 
     /**
      * Save form data.
      */
-    protected function postProcess()
+    protected function postProcessAuto()
     {
         $form_values = $this->getConfigFormValues();
 
         foreach (array_keys($form_values) as $key) {
-            Configuration::updateValue($key, Tools::getValue($key));
+            Config::updateValue($key, Tools::getValue($key));
         }
+
+        $all_opts = $this->getOptions();
+        $checkbox_options = array();
+        foreach ($all_opts as $chbx_options)
+        {
+            if (Tools::getValue('Auto_options_'.(int)$chbx_options['id_checkbox_options']))
+            {
+                $checkbox_options[] = $chbx_options['id_checkbox_options'];
+            }
+        }
+        Config::updateValue('Auto_options', implode(',', $checkbox_options));
     }
 
     /**
-    * Add the CSS & JavaScript files you want to be loaded in the BO.
-    */
+     * Add the CSS & JavaScript files you want to be loaded in the BO.
+     */
+    public function hookDisplayBackOfficeFooter()
+    {
+        return $this->display(__FILE__, 'back.tpl');
+    }
+
     public function hookDisplayHeaderCategory()
     {
         $data=null;
@@ -260,5 +539,4 @@ class Navcategory extends Module
         }
         return $success;
     }
-
 }
