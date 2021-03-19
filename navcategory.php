@@ -27,16 +27,16 @@
 if (!defined('_PS_VERSION_')) {
     exit;
 }
-require_once _PS_MODULE_DIR_.'navcategory/classes/Config.php';
-require_once _PS_MODULE_DIR_.'navcategory/services/CdcTools.php';
+require_once _PS_MODULE_DIR_.'navCategory/classes/Config.php';
+require_once _PS_MODULE_DIR_.'navCategory/services/CdcTools.php';
 
-class Navcategory extends Module
+class NavCategory extends Module
 {
     protected $config_form = false;
 
     public function __construct()
     {
-        $this->name = 'navcategory';
+        $this->name = 'navCategory';
         $this->tab = 'administration';
         $this->version = '1.0.0';
         $this->author = 'RLedru';
@@ -58,7 +58,10 @@ class Navcategory extends Module
 
     public function install()
     {
-        Configuration::updateValue('NAVCATEGORY_LIVE_MODE', false);
+        if (Shop::isFeatureActive())
+        {
+        Shop::setContext(Shop::CONTEXT_ALL);
+    }
 
         include(dirname(__FILE__).'/sql/install.php');
 
@@ -140,7 +143,7 @@ class Navcategory extends Module
         $helper->allow_employee_form_lang = Configuration::get('PS_BO_ALLOW_EMPLOYEE_FORM_LANG', 0);
 
         $helper->identifier = $this->identifier;
-        $helper->submit_action = 'submitNavcategoryModule';
+        $helper->submit_action = 'submitNavCategoryModule';
         $helper->currentIndex = $this->context->link->getAdminLink('AdminModules', false)
             .'&configure='.$this->name.'&tab_module='.$this->tab.'&module_name='.$this->name;
         $helper->token = Tools::getAdminTokenLite('AdminModules');
@@ -500,14 +503,76 @@ class Navcategory extends Module
         return $this->display(__FILE__, 'back.tpl');
     }
 
+    /***
+     * return datas to template hook.
+     * @return mixed
+     */
     public function hookDisplayHeaderCategory()
     {
-        $data=null;
+        $data = array();
+        $currentCategory = new Category(Tools::getValue('id_category'));
+        $typeOfConfig = Config::get('TYPE_CONFIG');
+        $grandParents = $this->getGrandParents($currentCategory);
+        $parent = $this->getParent($currentCategory);
+        $uncles = $this->getUncles($currentCategory);
+        $brothers = $this->getBrothers($currentCategory);
+        $cousins = $this->getCousins($currentCategory);
+        $children = $this->getChildren($currentCategory);
+        $nephew = $this->getNephew($currentCategory);
+        $grandChildren = $this->getGrandChildren($currentCategory);
+
+        //AUTO
+        if($typeOfConfig == 0){
+            $configChecked = explode(',', Config::get('Auto_options'));
+            foreach($configChecked as $value)
+            {
+                switch ($value)
+                {
+                    case '1':
+                        $data = array_merge($data,$grandParents);
+                        break;
+                    case '2':
+                        $data = array_merge($data,$parent);
+                        break;
+                    case '3':
+                        $data = array_merge($data,$uncles);
+                        break;
+                    case '4':
+                        $data = array_merge($data,$brothers);
+                        break;
+                    case '5':
+                        $data =  array_merge($data,$cousins);
+                        break;
+                    case '6':
+                        $data = array_merge($data,$children);
+                        break;
+                    case '7':
+                        $data = array_merge($data,$nephew);
+                        break;
+                    case '8':
+                        $data = array_merge($data,$grandChildren);
+                        break;
+                }
+            }
+            $titles = array(
+                "2" => Config::get('AUTO_TITRE_2'),
+                "3" => Config::get('AUTO_TITRE_3'),
+                "4" => Config::get('AUTO_TITRE_4'),
+                "5" =>Config::get('AUTO_TITRE_5')
+            );
+            $ifExist = $this->ifDepthExist($data);
+        }
+        //PERSO
+        else if($typeOfConfig == 1){
+            $data = $this->getNephew($currentCategory);
+        }
 
         $this->context->smarty->assign([
-            'data' => $data
+            'data' => $data,
+            'title' => $titles,
+            'main' => $ifExist
         ]);
-        return $this->display(__FILE__, 'navcategory.tpl');
+        return $this->display(__FILE__, 'navCategory.tpl');
     }
 
     /***
@@ -539,4 +604,174 @@ class Navcategory extends Module
         }
         return $success;
     }
+
+    /***
+     * get children form current category
+     * @param $currentCategory
+     * @return mixed
+     */
+    public function getChildren($currentCategory){
+        $category_children = $currentCategory->getChildren(Tools::getValue('id_category'),$this->context->language->id);
+        foreach ($category_children as $key => $value){
+            $cat = new Category($value['id_category']);
+            $value['level_depth'] = $cat->level_depth;
+            $category_children[$key] = $value;
+        }
+
+        return $category_children;
+    }
+
+    /***
+     * get parent from current category
+     * @param $currentCategory
+     * @return mixed
+     */
+    public function getParent($currentCategory){
+        $category_grandparent = $currentCategory->getParentsCategories();
+        foreach($category_grandparent as $key => $value){
+            if($value['id_category'] == $currentCategory->id ){
+                unset($category_grandparent[$key]);
+            }
+            elseif($value['id_category'] == $currentCategory->id_parent){
+                $category_parent[] = $category_grandparent[$key];
+                unset($category_grandparent[$key]);
+            }
+        }
+        return $category_parent;
+    }
+
+    /***
+     * get all parents without direct parent from current category
+     * @param $currentCategory
+     * @return mixed
+     *
+     */
+    public function getGrandParents($currentCategory){
+        $category_grandparent = $currentCategory->getParentsCategories();
+        foreach($category_grandparent as $key => $value){
+            if($value['id_category'] == $currentCategory->id ){
+                unset($category_grandparent[$key]);
+            }
+            elseif($value['id_category'] == $currentCategory->id_parent){
+                $category_parent[] = $category_grandparent[$key];
+                unset($category_grandparent[$key]);
+            }
+        }
+        return $category_grandparent;
+    }
+
+    /***
+     * get grandchildren from current category
+     * @param $currentCategory
+     * @return array
+     */
+    public function getGrandChildren($currentCategory){
+        $category_grandchildren = array();
+        if ($subCategories = $currentCategory->getSubCategories($this->context->language->id)) {
+            foreach ($subCategories as $key => $subcat) {
+                $subcatObj = new Category($subcat['id_category']);
+                $category_grandchildren = array_merge($category_grandchildren, $subcatObj->getSubCategories($this->context->language->id));
+            }
+        }
+        return $category_grandchildren;
+    }
+
+    /***
+     * get uncles from current category
+     * @param $currentCategory
+     * @return mixed
+     */
+    public function getUncles($currentCategory){
+        $category_grandparents = $this->getGrandParents($currentCategory);
+        $getOnlyGrandParent = reset($category_grandparents);
+        $grandParentCategory = new Category($getOnlyGrandParent['id_category']);
+        $category_uncles = $grandParentCategory->getChildren($getOnlyGrandParent['id_category'],$this->context->language->id);
+        foreach($category_uncles as $key => $value){
+            if($value['id_category'] == '1' || $value['id_category'] == $currentCategory->id_parent){
+                unset($category_uncles[$key]);
+            }
+            else{
+                $cat = new Category($value['id_category']);
+                $value['level_depth'] = $cat->level_depth;
+                $category_uncles[$key] = $value;
+            }
+        }
+        return $category_uncles;
+    }
+
+    /***
+     * get cousins from current category
+     * @param $currentCategory
+     * @return array
+     */
+    public function getCousins($currentCategory){
+        $category_cousins = array();
+        $category_uncles = $this->getUncles($currentCategory);
+        foreach($category_uncles as $key => $value){
+            $uncle = new Category($value['id_category']);
+            $category_cousins = array_merge( $category_cousins, $uncle-> getChildren($value['id_category'],$this->context->language->id));
+        }
+        foreach ($category_cousins as $key => $value){
+            $cat = new Category($value['id_category']);
+            $value['level_depth'] = $cat->level_depth;
+            $category_cousins[$key] = $value;
+        }
+        return $category_cousins;
+    }
+
+    /**
+     * get all nephew from the current category
+     * @param $currentCategory
+     * @return array
+     */
+    public function getNephew($currentCategory){
+        $category_cousins = $this->getCousins($currentCategory);
+        $category_brothers = $this->getBrothers($currentCategory);
+        $categories = array_merge($category_cousins,$category_brothers);
+        $category_nephew = array();
+        foreach($categories as $key => $value){
+            $reference = new Category($value['id_category']);
+            $category_nephew = array_merge($category_nephew,$reference->getChildren($value['id_category'],$this->context->language->id));
+        }
+        foreach ($category_nephew as $key => $value){
+            $cat = new Category($value['id_category']);
+            $value['level_depth'] = $cat->level_depth;
+            $category_nephew[$key] = $value;
+        }
+        return $category_nephew;
+    }
+
+    /**
+     * get brothers from the current category
+     * @param $currentCategory
+     * @return array
+     */
+    public function getBrothers($currentCategory){
+        $category_brother = array();
+        $category_parent = $this->getParent($currentCategory);
+        foreach($category_parent as $key => $value){
+            $parent = new Category($value['id_category']);
+            $category_brother = array_merge($category_brother,$parent->getChildren($value['id_category'],$this->context->language->id));
+        }
+        foreach($category_brother as $key => $value){
+            if($value['id_category'] == $currentCategory->id) {
+                unset($category_brother[$key]);
+            }
+            else{
+                $cat = new Category($value['id_category']);
+                $value['level_depth'] = $cat->level_depth;
+                $category_brother[$key] = $value;
+            }
+        }
+        return $category_brother;
+    }
+
+    public function ifDepthExist($data){
+        $ifExist = array();
+        foreach ($data as $key => $value){
+            $ifExist[$value['level_depth']] = true;
+        }
+        return $ifExist;
+    }
+
 }
