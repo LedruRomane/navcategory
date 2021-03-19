@@ -5,12 +5,12 @@
         display: none;
     }
     #fieldset_2_2{
-        display: none;
+        display: block;
     }
     </style>
     <script type="text/javascript">
         $(document).ready(function() {
-            $(jQuery( "#perso:radio" )).click(function() {
+            $(jQuery( "#perso" )).click(function() {
                 document.getElementById('fieldset_1_1').style.display = 'block';
                 document.getElementById('fieldset_2_2').style.display = 'none';
             });
