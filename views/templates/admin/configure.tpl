@@ -24,7 +24,7 @@
 *}
 
 <div class="panel">
-	<h3><i class="icon icon-credit-card"></i> {l s='Navigation Category' mod='navcategory'}</h3>
+	<h3><i class="icon icon-credit-card"></i> {l s='Présentation' mod='navcategory'}</h3>
 	<p>
 		<strong>{l s='Bienvenu sur ce module pour un accordéon customisable en page catégories.' mod='navcategory'}</strong><br/><br/>
 		{l s='Vous pourrez ici configurer ce qui figurera en haut de vos page catégories ou product-list:' mod='navcategory'}<br />

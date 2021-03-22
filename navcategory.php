@@ -561,16 +561,66 @@ class NavCategory extends Module
                 "5" =>Config::get('AUTO_TITRE_5')
             );
             $ifExist = $this->ifDepthExist($data);
+
+
         }
         //PERSO
         else if($typeOfConfig == 1){
-            $data = $this->getNephew($currentCategory);
+            $titles = array(
+                "0" => Config::get('PERSO_TITRE_1'),
+                "1" => Config::get('PERSO_TITRE_2'),
+                "2" => Config::get('PERSO_TITRE_3'),
+                "3" =>Config::get('PERSO_TITRE_4')
+            );
+            $ifExist = null;
+
+            $configChecked = array(
+                0 => explode(',', Config::get('Perso_options_2')),
+                1 => explode(',', Config::get('Perso_options_3')),
+                2 => explode(',', Config::get('Perso_options_4')),
+                3 => explode(',', Config::get('Perso_options_5'))
+            );
+
+            foreach ($configChecked as $key => $value) {
+                $group = array();
+                foreach($value as $key2 => $id){
+                    switch ($id)
+                    {
+                        case '1':
+                            $group = array_merge($group,$grandParents);
+                            break;
+                        case '2':
+                            $group = array_merge($group,$parent);
+                            break;
+                        case '3':
+                            $group = array_merge($group,$uncles);
+                            break;
+                        case '4':
+                            $group = array_merge($group,$brothers);
+                            break;
+                        case '5':
+                            $group =  array_merge($group,$cousins);
+                            break;
+                        case '6':
+                            $group = array_merge($group,$children);
+                            break;
+                        case '7':
+                            $group = array_merge($group,$nephew);
+                            break;
+                        case '8':
+                            $group = array_merge($group,$grandChildren);
+                            break;
+                    }
+                    $data[$key] = $group;
+                }
+            }
         }
 
         $this->context->smarty->assign([
             'data' => $data,
             'title' => $titles,
-            'main' => $ifExist
+            'main' => $ifExist,
+            'type' => $typeOfConfig
         ]);
         return $this->display(__FILE__, 'navCategory.tpl');
     }
