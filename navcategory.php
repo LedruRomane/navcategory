@@ -572,7 +572,6 @@ class NavCategory extends Module
                 "2" => Config::get('PERSO_TITRE_3'),
                 "3" =>Config::get('PERSO_TITRE_4')
             );
-            $ifExist = null;
 
             $configChecked = array(
                 0 => explode(',', Config::get('Perso_options_2')),
@@ -611,7 +610,13 @@ class NavCategory extends Module
                             $group = array_merge($group,$grandChildren);
                             break;
                     }
+
                     $data[$key] = $group;
+                    foreach($group as $key2 => $value){
+                        if(isset($group) && $value['id_category'] != 2){
+                            $ifExist[$key] = true;
+                        }
+                    }
                 }
             }
         }
@@ -619,7 +624,7 @@ class NavCategory extends Module
         $this->context->smarty->assign([
             'data' => $data,
             'title' => $titles,
-            'main' => $ifExist,
+            'ifExist' => $ifExist,
             'type' => $typeOfConfig
         ]);
         return $this->display(__FILE__, 'navCategory.tpl');
