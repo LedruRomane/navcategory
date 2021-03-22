@@ -49,6 +49,5 @@
 		<img class="fit-picture" src="/exemple/modules/navcategory/views/img/AccessibilityDiagram.jpg" alt="Accessibility Diagram">
 		<p>Ci-joint le diagramme d'accessibilité</p>
 	</div>
-
 </div>
 
