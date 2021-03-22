@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <module>
-	<name>navcategory</name>
+	<name>navCategory</name>
 	<displayName><![CDATA[Navigation Category]]></displayName>
 	<version><![CDATA[1.0.0]]></version>
 	<description><![CDATA[Module prestashop pour naviguer dans les pages catégories avec un menu dynamique de l\'arborescence. ]]></description>

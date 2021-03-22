@@ -2,10 +2,10 @@
     <style type="text/css">
 
     #fieldset_1_1{
-        display: none;
+        display: block;
     }
     #fieldset_2_2{
-        display: block;
+        display: none;
     }
     </style>
     <script type="text/javascript">
@@ -19,6 +19,5 @@
                 document.getElementById('fieldset_2_2').style.display = 'block';
             });
         });
-        console.log('toto');
     </script>
 {/literal}
