@@ -2,11 +2,12 @@
     <style type="text/css">
 
     #fieldset_1_1{
-        display: block;
+        display: none;
     }
     #fieldset_2_2{
         display: none;
     }
+
     </style>
     <script type="text/javascript">
         $(document).ready(function() {
