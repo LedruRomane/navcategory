@@ -66,8 +66,8 @@ class NavCategory extends Module
         include(dirname(__FILE__).'/sql/install.php');
 
         return parent::install() &&
-            $this->registerHook('DisplayHeaderCategory') &&
-            $this->registerHook('backOfficeFooter');
+            $this->registerHook('displayHeaderCategory') &&
+            $this->registerHook('displayBackOfficeFooter');
     }
 
     public function uninstall()
