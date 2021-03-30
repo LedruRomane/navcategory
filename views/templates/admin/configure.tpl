@@ -46,7 +46,7 @@
 		&raquo; {l s='N\'oubliez pas d\'accrocher votre module au hook custom en haut à droite de cette page de configuration.' mod='navcategory'}
 	</p>
 	<div class="picture">
-		<img class="fit-picture" src="/exemple/modules/navcategory/views/img/AccessibilityDiagram.jpg" alt="Accessibility Diagram">
+		<img class="fit-picture" src="{$_MODULE_DIR_ }/navcategory/views/img/AccessibilityDiagram.jpg" alt="Accessibility Diagram">
 		<p>Ci-joint le diagramme d'accessibilité</p>
 	</div>
 </div>
