@@ -1,4 +1,4 @@
-# Module Prestashop Navigation Category
+# Module Prestashop : Navigation Category
 ## _[EN]_
 
 ## _[Fr]_
